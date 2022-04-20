@@ -1,50 +1,49 @@
+import { uid } from 'uid'
 import { useState , useEffect } from "react"
-import { List, ListItem, ListItemText, Box, TextField, Typography } from "@mui/material"
+import { Card, CardContent, List, Box, TextField, Typography } from "@mui/material"
 import styles from "../styles/Todos.module.css"
 import { TransitionGroup } from 'react-transition-group';
-// import List from '@mui/material/List';
-// import ListItem from '@mui/material/ListItem';
-// import ListItemText from '@mui/material/ListItemText';
-
-
-
-
 
 export default function Todos () {
     const [ text, setText ] = useState("")
     const [ todos, setTodos ] = useState([])
 
     useEffect(() => {
-        setTodos(JSON.parse(localStorage.todos))
+        if (localStorage.todos) {
+            setTodos(JSON.parse(localStorage.todos))
+        }
     }, [])
+    useEffect(() => {
+        if (todos.length > 0) {
+            localStorage.setItem("todos", JSON.stringify(todos))
+        }
+    }, [todos])
 
     function handleSubmit(e) {
         e.preventDefault()
-        setTodos([{text, done:false}, ...todos])
+        const id = uid()
+        setTodos([{text, done:false, id:id}, ...todos])
         setText("")
     }
 
     function markDone(e) {
         setTodos(todos.map(todo => {
-            console.log(e.target.innerText)
-            console.log(todo.text)
+            console.log(e.target.getAttribute("id"))
             if (e.target.innerText === todo.text) {
                 console.log("inside")
                 return {text:todo.text, done:!todo.done}
             } else {
                 return todo
             }
-        })
-        )
-        console.log(todos)
+        }))
     }
     return (
-        <Box>
+        <div>
             <form
                 onSubmit={handleSubmit}
             >
                 <TextField 
-                    className="styles.entryfield"
+                    className={styles.entryfield}
                     label="Add a todo"
                     autoFocus
                     value={text}
@@ -53,22 +52,26 @@ export default function Todos () {
             </form>
 
             <List>
-            <TransitionGroup>
-            {todos.map(todo => {
-                return (<ListItem
-                        variant="body1"
-                        key={todo.text}
+            {todos.map(todo =>(
+                <Card className={styles.card}
+                        key={todo.id}
                         onClick={markDone}
-                        style= {{
-                        color: todo.done ? "#555" : ""
-                    }}
-                    >
-                        {todo.text}
-                    </ListItem>
+                        id={todo.id}
+                >
+                    <CardContent>
+                        <Typography
+                                variant="body1"
+                                style= {{
+                                    color: todo.done ? "#555" : ""
+                                }}
+                        >
+                            {todo.text} - {todo.id}
+                        </Typography>
+                    </CardContent>
+                </Card>
                 )
-            })}
-            </TransitionGroup>
+            )}
             </List>
-        </Box>
+        </div>
     )
 }
