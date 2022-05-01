@@ -1,12 +1,43 @@
 .entryfield {
     margin: 1rem;
+    min-width: 400px;
 }
 
 .card {
     margin: 3px;
+    background-color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
 }
 
 .card:hover {
     cursor: pointer;
     color:dodgerblue;
+}
+.icons {
+    color: #aaa;
+}
+
+.clearall {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: red;
+    display: flex;
+    flex-direction: column;
+}
+
+.deleteallmodal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modalbox {
+    padding: 4px;
+    width: 400px;
+    background-color: maroon;
+    border: 2px solid #000;
 }
