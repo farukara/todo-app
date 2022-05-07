@@ -1,5 +1,5 @@
 import { uid } from 'uid'
-import { useState , useEffect, useRef } from "react"
+import { useState , useEffect, useLayoutEffect, useRef } from "react"
 import { Card, CardContent, Modal, List, ListItem, Box, Button, IconButton, TextField, Typography } from "@mui/material"
 import styles from "../styles/Todos.module.css"
 import { TransitionGroup } from 'react-transition-group';
@@ -10,19 +10,24 @@ import EditIcon from '@mui/icons-material/Edit';
 
 export default function Todos () {
     const [ text, setText ] = useState("")
-    const [ todos, setTodos ] = useState(() => window.localStorage.todos ? localStorage.todos:[])
+    const [ editText, setEditText ] = useState("")
+    const [ editId, setEditId ] = useState("")
+    const [ todos, setTodos ] = useState([])
+    const [ showEditModal, setShowEditModal] = useState(false)
     const [ showClearTodosModal, setShowClearTodosModal] = useState(false)
     const inputRef = useRef()
 
     useEffect(() => {
         if (localStorage.todos) {
             setTodos(JSON.parse(localStorage.todos))
+        } else {
+            localStorage.todos = []
         }
     }, [])
     useEffect(() => {
-        // if (todos.length > 0) {
+        if (todos && todos.length > 0) {
             localStorage.setItem("todos", JSON.stringify(todos))
-        // }
+        }
     }, [todos])
 
     function handleSubmit(e) {
@@ -32,21 +37,46 @@ export default function Todos () {
         setText("")
     }
 
+    function handleEdit(e, id, text) {
+        e.stopPropagation()
+        setEditId(id)
+        setEditText(text)
+        setShowEditModal(true)
+    }
+
     function markDone(e) {
+        // e.stopPropagation()
         setTodos(todos.map(todo => {
             if (e.target.innerText === todo.text) {
-                console.log("inside")
-                return {text:todo.text, done:!todo.done}
+                return {...todo, done:!todo.done}
             } else {
                 return todo
             }
         }))
     }
 
-    function deleteTodo(id: string) {
-        const newtodos = todos.filter(todo => todo.id !== id)
-        console.log('newtodos:', newtodos)
-        setTodos(newtodos)
+    function handleEditSubmit (e) {
+        e.preventDefault()
+        setShowEditModal(false)
+        setTodos(todos.map(todo => {
+            if (editId === todo.id) {
+                return {...todo, text:editText}
+            } else {
+                return todo
+            }
+        }))
+    }
+
+    function deleteTodo(e, id) {
+        e.stopPropagation()
+        setTodos(todos.filter((todo,i,arr) => {
+            return (todo.id !== id)
+        }))
+    }
+    function deleteAll() {
+        setTodos([])
+        setShowClearTodosModal(false)
+        localStorage.removeItem("todos")
     }
 
     return (
@@ -74,6 +104,42 @@ export default function Todos () {
             >
                 Delete All Todos
             </Button>
+
+            <Modal
+              open={showEditModal}
+              onClose={() => setShowEditModal(false)}
+              aria-labelledby="edit todo"
+              aria-describedby="edit todo"
+              className={styles.editModal}
+            >
+                <Box className={styles.modalbox}>
+                    <form
+                    onSubmit={(e) => {handleEditSubmit(e)}}
+                    >
+                        <TextField 
+                            className={styles.entryfield}
+                            label="Add a todo"
+                            autoFocus
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                        />
+                    <Button
+                        onClick={() => setShowEditModal(false)}
+                        variant="contained"
+                        sx={{m:1}}
+                    >
+                    Cancel
+                    </Button>
+                    <Button
+                        onClick={(e) => {handleEditSubmit(e)}}
+                        variant="contained"
+                        sx={{m:1}}
+                    >
+                    Save
+                    </Button>
+                    </form>
+                </Box>
+            </Modal>
             <Modal
               open={showClearTodosModal}
               onClose={() => setShowClearTodosModal(false)}
@@ -96,10 +162,7 @@ export default function Todos () {
                 Nah, don't delete my todos
                 </Button>
                 <Button 
-                    onClick={() => {
-                        setTodos([])
-                        setShowClearTodosModal(false)
-                    }}
+                    onClick={deleteAll}
                     variant="contained"
                     startIcon={<ReportProblemIcon />}
                     sx={{
@@ -113,7 +176,7 @@ export default function Todos () {
             </Modal>
 
             <List>
-            {todos.map(todo =>(
+            {todos && todos.map(todo =>(
                 <ListItem 
                     key={todo.id}
                     onClick={markDone}
@@ -122,16 +185,27 @@ export default function Todos () {
                     >
                             <IconButton 
                                 className={styles.icons}
-                                onClick={() => deleteTodo(todo.id)}
+                                onClick={(e) => {deleteTodo(e, todo.id)}}
                                 aria-label="delete"
                             >
-                              <DeleteIcon fontSize="small"/>
+                                <DeleteIcon 
+                                    style= {{
+                                        color: todo.done ? "#555" : "",
+                                    }}
+                                    fontSize="small"
+                                />
                             </IconButton>
                             <IconButton 
                                 className={styles.icons}
                                 aria-label="edit"
+                                onClick={(e) => handleEdit(e, todo.id, todo.text)}
                             >
-                              <EditIcon fontSize="small"/>
+                                <EditIcon 
+                                    style= {{
+                                        color: todo.done ? "#555" : "",
+                                    }}
+                                    fontSize="small" 
+                                />
                             </IconButton>
                             <Typography
                                     variant="body1"
